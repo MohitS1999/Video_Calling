@@ -2,6 +2,7 @@ package com.example.videocalling
 
 import android.app.Application
 import android.view.Surface
+import com.example.videocalling.Models.MessageModel
 import org.webrtc.*
 
 class RTCClient (
@@ -78,5 +79,123 @@ class RTCClient (
             }?:throw
                     java.lang.IllegalStateException()
         }
+    }
+    fun call(target: String){
+        val mediaConstraints = MediaConstraints()
+        mediaConstraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo","true"))
+
+        peerConnection?.createOffer(object  : SdpObserver{
+            override fun onCreateSuccess(desc: SessionDescription?) {
+                peerConnection?.setLocalDescription(object :SdpObserver{
+                    override fun onCreateSuccess(p0: SessionDescription?) {
+
+                    }
+
+                    override fun onSetSuccess() {
+                        val offer = hashMapOf(
+                            "sdp" to desc?.description,
+                            "type" to desc?.type
+                        )
+                        socketRepositry.sendMessageToSocket(MessageModel(
+                            "create_offer",username,target,offer
+                        ))
+                    }
+
+                    override fun onCreateFailure(p0: String?) {
+
+                    }
+
+                    override fun onSetFailure(p0: String?) {
+
+                    }
+
+                },desc)
+            }
+
+            override fun onSetSuccess() {
+
+            }
+
+            override fun onCreateFailure(p0: String?) {
+
+            }
+
+            override fun onSetFailure(p0: String?) {
+
+            }
+
+        },mediaConstraints)
+    }
+
+    fun onRemoteSessionReceived(session:SessionDescription){
+        peerConnection?.setRemoteDescription(object :SdpObserver{
+            override fun onCreateSuccess(p0: SessionDescription?) {
+
+            }
+
+            override fun onSetSuccess() {
+
+            }
+
+            override fun onCreateFailure(p0: String?) {
+
+            }
+
+            override fun onSetFailure(p0: String?) {
+
+            }
+
+        },session)
+    }
+    fun answer(target:String){
+        val constraints = MediaConstraints()
+        constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo","true"))
+        peerConnection?.createAnswer(object :SdpObserver{
+            override fun onCreateSuccess(desc: SessionDescription?) {
+                 peerConnection?.setLocalDescription(object : SdpObserver{
+                     override fun onCreateSuccess(p0: SessionDescription?) {
+                         TODO("Not yet implemented")
+                     }
+
+                     override fun onSetSuccess() {
+                         val answer = hashMapOf(
+                             "sdp" to desc?.description,
+                             "type" to desc?.type
+                         )
+                         socketRepositry.sendMessageToSocket(
+                             MessageModel(
+                             "create_answer",username,target,answer
+                         )
+                         )
+                     }
+
+                     override fun onCreateFailure(p0: String?) {
+
+                     }
+
+                     override fun onSetFailure(p0: String?) {
+
+                     }
+
+                 },desc)
+            }
+
+            override fun onSetSuccess() {
+
+            }
+
+            override fun onCreateFailure(p0: String?) {
+
+            }
+
+            override fun onSetFailure(p0: String?) {
+
+            }
+
+        },constraints)
+    }
+
+    fun addIceCandidate(p0: IceCandidate?) {
+        peerConnection?.addIceCandidate(p0)
     }
 }
