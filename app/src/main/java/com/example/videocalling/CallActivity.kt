@@ -65,15 +65,18 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
         rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
         binding.apply {
             callBtn.setOnClickListener {
+                Log.d(TAG, "init: callBtn")
                 socketRepositry?.sendMessageToSocket(
                     MessageModel(
                     "start_call",userName,targetUserNameEt.text.toString(),null
                 ))
                 target = targetUserNameEt.text.toString()
                 switchCameraButton.setOnClickListener {
+                    Log.d(TAG, "init: press switchCameraButton")
                     rtcClient?.switchCamera()
                 }
                 micButton.setOnClickListener {
+                    Log.d(TAG, "init: press MicButton")
                     if (isMute){
                         isMute = false
                         micButton.setImageResource(R.drawable.ic_baseline_mic_off_24)
@@ -84,6 +87,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                     rtcClient?.toggleAudio(isMute)
                 }
                 videoButton.setOnClickListener {
+                    Log.d(TAG, "init: press VideoButton")
                     if (isCameraPause){
                         isCameraPause = false
                         videoButton.setImageResource(R.drawable.ic_baseline_videocam_off_24)
@@ -95,6 +99,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 }
 
                 audioOutputButton.setOnClickListener {
+                    Log.d(TAG, "init: press audioOutputButton")
                     if (isSpeakerMode){
                         isSpeakerMode = false
                         audioOutputButton.setImageResource(R.drawable.ic_baseline_hearing_24)
@@ -107,6 +112,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 }
 
                 endCallButton.setOnClickListener {
+                    Log.d(TAG, "init: Press end call button")
                     setCallLayoutGone()
                     setWhoToCallLayoutVisible()
                     setIncomingCallLayoutGone()
@@ -124,12 +130,14 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
             "call_response"->{
                 if (message.data == "user is not online"){
                     //User is not reachable
+                    Log.d(TAG, "onNewMessage:${message.type} User is not reachable")
                     runOnUiThread {
                         Toast.makeText(this,"User is not reachable",Toast.LENGTH_LONG).show()
                     }
                 }else{
                     //we are ready for call,we started a call
                     runOnUiThread{
+                        Log.d(TAG, "onNewMessage: ${message.type} PeerA is ready for call")
                         setWhoToCallLayoutGone()
                         setCallLayoutVisible()
                         binding.apply {
@@ -142,6 +150,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 }
             }
             "answer_received" -> {
+                Log.d(TAG, "onNewMessage: ${message.type} ")
                 val session = SessionDescription(
                     SessionDescription.Type.ANSWER,
                     message.data.toString()
@@ -151,6 +160,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
             }
             "offer_received" ->{
                 runOnUiThread {
+                    Log.d(TAG, "onNewMessage: ${message.type}")
                     setIncomingCallLayoutVisible()
                     binding.incomingNameTV.text = "${message.name.toString()} is calling you"
                     binding.acceptButton.setOnClickListener {
@@ -171,6 +181,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                         rtcClient?.answer(message.name.toString())
                     }
                     binding.rejectButton.setOnClickListener {
+                        Log.d(TAG, "onNewMessage: ${message.type} -> reject button")
                         setIncomingCallLayoutGone()
                     }
                 }
@@ -179,6 +190,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
             "ice_candidate" ->{
                 runOnUiThread {
                     try{
+                        Log.d(TAG, "onNewMessage: ${message.type}")
                         val recevingCandidate = gson.fromJson(gson.toJson(message.data),IceCandidateModel::class.java)
                         rtcClient?.addIceCandidate(IceCandidate(recevingCandidate.sdpMid,
                         Math.toIntExact(recevingCandidate.sdpMLineIndex.toLong()),recevingCandidate.sdpCandidate))

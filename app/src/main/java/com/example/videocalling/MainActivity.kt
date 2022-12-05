@@ -4,10 +4,13 @@ import android.Manifest
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import com.example.videocalling.databinding.ActivityMainBinding
 import com.permissionx.guolindev.PermissionX
+import kotlin.math.log
 
+private const val TAG = "MainActivity"
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
 
@@ -22,11 +25,13 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.CAMERA
                 ).request{allGranted,_,_ ->
                     if (allGranted){
+                        Log.d(TAG, "onCreate: all permission are granted")
                         startActivity(
                             Intent(this,CallActivity::class.java)
                                 .putExtra("username",binding.username.text.toString())
                         )
                     }else{
+                        Log.d(TAG, "onCreate: all permission are denied")
                         Toast.makeText(this,"You should accept all permission",Toast.LENGTH_LONG).show()
                     }
                 }

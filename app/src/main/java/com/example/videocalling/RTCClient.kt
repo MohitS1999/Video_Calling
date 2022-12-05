@@ -22,6 +22,10 @@ class RTCClient (
     private val peerConnectionFactory  by lazy { createPeerConnectionFactory() }
     private val iceServer = listOf(
         PeerConnection.IceServer.builder("stun:iphone-stun.strato-iphone.de:3478").createIceServer(),
+        PeerConnection.IceServer("stun:openrelay.metered.ca:80"),
+        PeerConnection.IceServer("turn:openrelay.metered.ca:80","openrelayproject","openrelayproject"),
+        PeerConnection.IceServer("turn:openrelay.metered.ca:443","openrelayproject","openrelayproject"),
+        PeerConnection.IceServer("turn:openrelay.metered.ca:443?transport=tcp","openrelayproject","openrelayproject"),
 
         )
     private val peerConnection by lazy { createPeerConnection(observer) }
@@ -32,6 +36,7 @@ class RTCClient (
     private var localVideoTrack:VideoTrack?=null
 
     private fun initPeerConnectionFactory(application: Application){
+        Log.d(TAG, "initPeerConnectionFactory: ")
         val peerConnectionOption = PeerConnectionFactory.InitializationOptions.builder(application)
             .setEnableInternalTracer(true)
             .setFieldTrials("WebRTC-H264HighProfile/Enabled/")
@@ -40,6 +45,7 @@ class RTCClient (
     }
 
     private fun createPeerConnectionFactory():PeerConnectionFactory{
+        Log.d(TAG, "createPeerConnectionFactory: ")
         return PeerConnectionFactory.builder()
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglContext.eglBaseContext,true,true))
             .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglContext.eglBaseContext))
@@ -54,6 +60,7 @@ class RTCClient (
     }
 
     fun initializeSurfaceView(surface: SurfaceViewRenderer){
+        Log.d(TAG, "initializeSurfaceView: ")
         surface.run{
             setEnableHardwareScaler(true)
             setMirror(true)
@@ -62,6 +69,7 @@ class RTCClient (
     }
 
     fun startLocalVideo(surface: SurfaceViewRenderer){
+        Log.d(TAG, "startLocalVideo: ")
         val surfaceTextureHelper =
             SurfaceTextureHelper.create(Thread.currentThread().name,eglContext.eglBaseContext)
         videoCapturer = getVideoCapturer(application)
@@ -78,6 +86,7 @@ class RTCClient (
     }
 
     private fun getVideoCapturer(application: Application):CameraVideoCapturer{
+        Log.d(TAG, "getVideoCapturer: ")
         return Camera2Enumerator(application).run {
             deviceNames.find {
                 isFrontFacing(it)
@@ -93,12 +102,14 @@ class RTCClient (
 
         peerConnection?.createOffer(object  : SdpObserver{
             override fun onCreateSuccess(desc: SessionDescription?) {
+                Log.d(TAG, " call:- onCreateSuccess: createOffer")
                 peerConnection?.setLocalDescription(object :SdpObserver{
                     override fun onCreateSuccess(p0: SessionDescription?) {
 
                     }
 
                     override fun onSetSuccess() {
+                        Log.d(TAG, "call:- onSetSuccess: setLocalDesciption")
                         val offer = hashMapOf(
                             "sdp" to desc?.description,
                             "type" to desc?.type
@@ -159,12 +170,14 @@ class RTCClient (
         constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo","true"))
         peerConnection?.createAnswer(object :SdpObserver{
             override fun onCreateSuccess(desc: SessionDescription?) {
+                Log.d(TAG, "answer:-  onCreateSuccess: ")
                  peerConnection?.setLocalDescription(object : SdpObserver{
                      override fun onCreateSuccess(p0: SessionDescription?) {
                          TODO("Not yet implemented")
                      }
 
                      override fun onSetSuccess() {
+                         Log.d(TAG, "answer:- onSetSuccess: ")
                          val answer = hashMapOf(
                              "sdp" to desc?.description,
                              "type" to desc?.type

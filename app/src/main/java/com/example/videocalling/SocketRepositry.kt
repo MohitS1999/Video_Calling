@@ -21,7 +21,7 @@ class SocketRepositry (private val messageInteface:NewMessageInterface){
         //if you are using android emulator your local websocket address is going to be "ws://10.0.2.2:3000"
         //if you are using your phone as emulator your local address is going to be this : "ws://192.168.1.3:3000"
         // but if your websocket is deployed you add your websocket address here
-
+        Log.d(TAG, "initSocket: $username")
         webSocket = object :WebSocketClient(URI("ws://10.0.2.2:3000")){
             override fun onOpen(handshakedata: ServerHandshake?) {
                 sendMessageToSocket(MessageModel(
@@ -52,6 +52,7 @@ class SocketRepositry (private val messageInteface:NewMessageInterface){
 
     fun sendMessageToSocket(message: MessageModel){
         try{
+            Log.d(TAG, "sendMessageToSocket: $message")
             webSocket?.send(Gson().toJson(message))
         } catch (e:Exception){
             e.printStackTrace()
