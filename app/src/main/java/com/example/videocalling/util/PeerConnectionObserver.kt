@@ -1,4 +1,4 @@
-package com.example.videocalling
+package com.example.videocalling.util
 
 import org.webrtc.*
 

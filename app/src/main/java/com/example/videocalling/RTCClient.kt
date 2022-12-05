@@ -1,10 +1,12 @@
 package com.example.videocalling
 
 import android.app.Application
+import android.util.Log
 import android.view.Surface
 import com.example.videocalling.Models.MessageModel
 import org.webrtc.*
 
+private const val TAG = "RTCClient"
 class RTCClient (
     private val application: Application,
     private val username:String,
@@ -25,6 +27,10 @@ class RTCClient (
     private val peerConnection by lazy { createPeerConnection(observer) }
     private val localVideoSource by lazy { peerConnectionFactory.createVideoSource(false) }
     private val localAudioSource by lazy { peerConnectionFactory.createAudioSource(MediaConstraints()) }
+    private var videoCapturer : CameraVideoCapturer?=null
+    private var localAudioTrack:AudioTrack?=null
+    private var localVideoTrack:VideoTrack?=null
+
     private fun initPeerConnectionFactory(application: Application){
         val peerConnectionOption = PeerConnectionFactory.InitializationOptions.builder(application)
             .setEnableInternalTracer(true)
@@ -43,6 +49,7 @@ class RTCClient (
             }).createPeerConnectionFactory()
     }
     private fun createPeerConnection(observer: PeerConnection.Observer): PeerConnection?{
+        Log.d(TAG,"createPeerConnection: Creating the peer connectiong ")
         return peerConnectionFactory.createPeerConnection(iceServer,observer)
     }
 
@@ -57,13 +64,13 @@ class RTCClient (
     fun startLocalVideo(surface: SurfaceViewRenderer){
         val surfaceTextureHelper =
             SurfaceTextureHelper.create(Thread.currentThread().name,eglContext.eglBaseContext)
-        val videoCapturer = getVideoCapturer(application)
-        videoCapturer.initialize(surfaceTextureHelper,
+        videoCapturer = getVideoCapturer(application)
+        videoCapturer?.initialize(surfaceTextureHelper,
         surface.context,localVideoSource.capturerObserver)
-        videoCapturer.startCapture(320,240,30)
-        val localVideoTrack = peerConnectionFactory.createVideoTrack("local_track",localVideoSource)
-        localVideoTrack.addSink(surface)
-        val localAudioTrack = peerConnectionFactory.createAudioTrack("local_track_audio",localAudioSource)
+        videoCapturer?.startCapture(320,240,30)
+        localVideoTrack = peerConnectionFactory.createVideoTrack("local_track",localVideoSource)
+        localVideoTrack?.addSink(surface)
+        localAudioTrack = peerConnectionFactory.createAudioTrack("local_track_audio",localAudioSource)
         val localStream = peerConnectionFactory.createLocalMediaStream("local_stream")
         localStream.addTrack(localAudioTrack)
         localStream.addTrack(localVideoTrack)
@@ -197,5 +204,21 @@ class RTCClient (
 
     fun addIceCandidate(p0: IceCandidate?) {
         peerConnection?.addIceCandidate(p0)
+    }
+
+    fun switchCamera() {
+        videoCapturer?.switchCamera(null)
+    }
+
+    fun toggleAudio(mute: Boolean) {
+        localAudioTrack?.setEnabled(mute)
+    }
+
+    fun toggleCamera(cameraPause: Boolean) {
+        localVideoTrack?.setEnabled(cameraPause)
+    }
+
+    fun endCall() {
+        peerConnection?.close()
     }
 }

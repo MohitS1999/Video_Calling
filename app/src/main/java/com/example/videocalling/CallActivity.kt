@@ -8,11 +8,11 @@ import android.widget.Toast
 import com.example.videocalling.Models.MessageModel
 import com.example.videocalling.databinding.ActivityCallBinding
 import com.example.videocalling.util.NewMessageInterface
-import com.google.android.material.tabs.TabLayout.TabGravity
+import com.example.videocalling.util.PeerConnectionObserver
+import com.example.videocalling.util.RTCAudioManager
 import com.google.gson.Gson
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
-import org.webrtc.PeerConnection
 import org.webrtc.SessionDescription
 
 private const val TAG = "CallActivity"
@@ -24,6 +24,10 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
     private var rtcClient: RTCClient?=null
     private var target:String = ""
     private val gson = Gson()
+    private var isMute = false
+    private var isCameraPause = false
+    private val rtcAudioManager by lazy {  RTCAudioManager.create(this) }
+    private var isSpeakerMode = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +40,8 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
         userName = intent.getStringExtra("username")
         socketRepositry = SocketRepositry(this)
         userName?.let { socketRepositry?.initSocket(it) }
-        rtcClient = RTCClient(application,userName!!,socketRepositry!!,object :PeerConnectionObserver(){
+        rtcClient = RTCClient(application,userName!!,socketRepositry!!,object :
+            PeerConnectionObserver(){
             override fun onIceCandidate(p0: IceCandidate?) {
                 super.onIceCandidate(p0)
                 rtcClient?.addIceCandidate(p0);
@@ -57,7 +62,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
             }
 
         })
-
+        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
         binding.apply {
             callBtn.setOnClickListener {
                 socketRepositry?.sendMessageToSocket(
@@ -65,6 +70,49 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                     "start_call",userName,targetUserNameEt.text.toString(),null
                 ))
                 target = targetUserNameEt.text.toString()
+                switchCameraButton.setOnClickListener {
+                    rtcClient?.switchCamera()
+                }
+                micButton.setOnClickListener {
+                    if (isMute){
+                        isMute = false
+                        micButton.setImageResource(R.drawable.ic_baseline_mic_off_24)
+                    }else{
+                        isMute = true
+                        micButton.setImageResource(R.drawable.ic_baseline_mic_24)
+                    }
+                    rtcClient?.toggleAudio(isMute)
+                }
+                videoButton.setOnClickListener {
+                    if (isCameraPause){
+                        isCameraPause = false
+                        videoButton.setImageResource(R.drawable.ic_baseline_videocam_off_24)
+                    }else{
+                        isCameraPause = true
+                        videoButton.setImageResource(R.drawable.ic_baseline_videocam_24)
+                    }
+                    rtcClient?.toggleCamera(isCameraPause)
+                }
+
+                audioOutputButton.setOnClickListener {
+                    if (isSpeakerMode){
+                        isSpeakerMode = false
+                        audioOutputButton.setImageResource(R.drawable.ic_baseline_hearing_24)
+                        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.EARPIECE)
+                    }else{
+                        isSpeakerMode = true
+                        audioOutputButton.setImageResource(R.drawable.ic_baseline_speaker_up_24)
+                        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
+                    }
+                }
+
+                endCallButton.setOnClickListener {
+                    setCallLayoutGone()
+                    setWhoToCallLayoutVisible()
+                    setIncomingCallLayoutGone()
+                    rtcClient?.endCall()
+                }
+
             }
         }
     }
